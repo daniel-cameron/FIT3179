@@ -60,10 +60,10 @@
             "y": { "field": "Value", "type": "quantitative", "title": "Total Number of Trips", "axis": {"format": "~s"} },
             "color": { "field": "Mode", "type": "nominal", "title": "Transport Mode", "scale": {"scheme": "tableau10"} },
             "tooltip": [
-              {"field": "Month name", "type": "nominal"},
+              {"field": "Month name", "type": "nominal", "title": "Month"},
               {"field": "Year", "type": "ordinal"},
               {"field": "Mode", "type": "nominal"},
-              {"field": "Value", "type": "quantitative", "format": ","}
+              {"field": "Value", "type": "quantitative", "format": ",", "title": "Total Trips"}
             ]
           }
         },
@@ -138,3 +138,4 @@
 
 </body>
 </html>
+
