@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vega-Lite Visualizations</title>
+  <!-- Include Vega, Vega-Lite, and Vega-Embed -->
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <style>
+    /* Optional: make charts full width */
+    .vis {
+      width: 80%;
+      max-width: 800px;
+      margin: 50px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Public Transport in Victoria</h1>
+
+  <!-- Trends Graph First -->
+  <div id="vis-trends" class="vis"></div>
+  <!-- Map Second -->
+  <div id="vis-map" class="vis"></div>
+
+  <script>
+    // --- Trends Visualization ---
+    const trendsSpec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 600,
+      "height": 400,
+      "title": "Public Transport Trends and the Effect of COVID: Filter by Mode",
+      "data": {
+        "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/W10/DV2/transport_long.csv",
+        "format": { "parse": { "Date": "date:%d/%m/%Y" } }
+      },
+      "transform": [
+        { "filter": "TransportMode_selection == null || datum.Mode == TransportMode_selection" },
+        { "calculate": "year(datum.Date)", "as": "Year" },
+        { "calculate": "timeFormat(datum.Date, '%B')", "as": "Month name" }
+      ],
+      "params": [
+        {
+          "name": "TransportMode_selection",
+          "bind": {
+            "input": "select",
+            "options": [null,"Metropolitan train","Metropolitan tram","Metropolitan bus","Regional train","Regional coach","Regional bus"],
+            "labels": ["Show All","Metropolitan train","Metropolitan tram","Metropolitan bus","Regional train","Regional coach","Regional bus"],
+            "name": "Select Transport Mode: "
+          }
+        }
+      ],
+      "layer": [
+        {
+          "mark": {"type": "line", "point": true},
+          "encoding": {
+            "x": { "field": "Date", "type": "temporal", "title": "Month", "timeUnit": "yearmonth" },
+            "y": { "field": "Value", "type": "quantitative", "title": "Total Number of Trips", "axis": {"format": "~s"} },
+            "color": { "field": "Mode", "type": "nominal", "title": "Transport Mode", "scale": {"scheme": "tableau10"} },
+            "tooltip": [
+              {"field": "Month name", "type": "nominal"},
+              {"field": "Year", "type": "ordinal"},
+              {"field": "Mode", "type": "nominal"},
+              {"field": "Value", "type": "quantitative", "format": ","}
+            ]
+          }
+        },
+        {
+          "data": { "values": [ {"Date": "2020-03-01T00:00:00"} ] },
+          "mark": { "type": "rule", "color": "red", "strokeWidth": 2, "strokeDash": [4, 4] },
+          "encoding": { "x": {"field": "Date", "type": "temporal", "timeUnit": "yearmonth"} }
+        },
+        {
+          "data": { "values": [ {"Date": "2020-03-01T00:00:00", "label": "March 2020 - the first COVID-19 lockdown", "y": 30000000} ] },
+          "mark": { "type": "text", "align": "left", "baseline": "bottom", "dx": 5, "dy": 20, "color": "red", "fontWeight": "bold" },
+          "encoding": {
+            "x": {"field": "Date", "type": "temporal", "timeUnit": "yearmonth"},
+            "y": {"field": "y", "type": "quantitative"},
+            "text": {"field": "label", "type": "nominal"}
+          }
+        }
+      ]
+    };
+
+    vegaEmbed('#vis-trends', trendsSpec)
+      .then(result => console.log("Trends visualization loaded"))
+      .catch(console.error);
+
+    // --- Map Visualization ---
+    const mapSpec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "title": "Train Passengers in Metropolitan Victoria (percentile size), 2024-2025",
+      "projection": { "type": "mercator", "center": [145.0, -37.8], "scale": 20000 },
+      "layer": [
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/main/DV2/suburbs.topojson",
+            "format": { "type": "topojson", "feature": "vic_localities" }
+          },
+          "mark": { "type": "geoshape", "fill": "#f0f0f0", "stroke": "#d9d9d9" }
+        },
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/main/DV2/annual_metropolitan_train_station_entries_fy_2024_2025%20(1).csv",
+            "format": { "type": "csv" }
+          },
+          "transform": [
+            { "window": [{ "op": "rank", "field": "Pax_annual", "as": "pax_rank" }], "sort": [{ "field": "Pax_annual", "order": "ascending" }] },
+            { "window": [{ "op": "count", "as": "total_count" }] },
+            { "calculate": "datum.pax_rank / datum.total_count", "as": "pax_percentile" }
+          ],
+          "mark": { "type": "circle", "opacity": 0.7 },
+          "encoding": {
+            "longitude": { "field": "Stop_long", "type": "quantitative" },
+            "latitude": { "field": "Stop_lat", "type": "quantitative" },
+            "size": { "field": "Pax_annual", "type": "quantitative", "scale": { "range": [10, 100] }, "title": "Annual Passengers" },
+            "tooltip": [
+              { "field": "Stop_name", "type": "nominal", "title": "Station" },
+              { "field": "Pax_annual", "type": "quantitative", "title": "Annual Passengers" },
+              { "field": "pax_percentile", "type": "quantitative", "format": ".2f", "title": "Percentile" }
+            ]
+          }
+        },
+        {
+          "data": { "graticule": { "step": [0.1, 0.1] } },
+          "mark": { "type": "geoshape", "stroke": "#666666", "strokeWidth": 1, "fill": null }
+        }
+      ]
+    };
+
+    vegaEmbed('#vis-map', mapSpec)
+      .then(result => console.log("Map visualization loaded"))
+      .catch(console.error);
+
+  </script>
+
+</body>
+</html>
