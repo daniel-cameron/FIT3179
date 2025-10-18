@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Public Transport in Australia — who really gets a seat?</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> 
+  <style>
+    :root { --gap: 18px; --sep-color: #ddd; }
+    body {
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      font-size: 14px;
+      color: #222;
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      position: relative;
+      
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        repeating-linear-gradient(90deg, rgba(0,0,0,0.01) 0px, transparent 1px, transparent 60px, rgba(0,0,0,0.01) 61px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.01) 0px, transparent 1px, transparent 60px, rgba(0,0,0,0.01) 61px);
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* --- Typography Enhancements --- */
+    h1 {
+    font-weight: 700;             /* Make it bold */
+    font-size: 2.2rem;            /* Larger than other headings */
+    color: #345985;               /* Dark but not harsh black */
+    text-align: center;           /* Centered on the page */
+    letter-spacing: 1px;          /* Slight spacing for elegance */
+    line-height: 1.3;             /* Better vertical spacing */
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.1); /* subtle 3D effect */
+    margin-bottom: 24px;
+    }
+    h2, h3 {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: #111;
+    }
+
+    h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    }
+
+    p {
+    margin-bottom: 1em;
+    text-align: justify;
+    }
+
+    p strong {
+    font-weight: 600;
+    color: #000;
+    }
+
+    p u {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    }
+
+
+    .container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;       /* Adds breathing room on left & right */
+  box-sizing: border-box; /* Ensures padding doesn’t add extra width */
+  overflow-x: hidden;    /* Prevents visual spillover from charts */
+}
+
+    .row {
+      display: grid;
+      column-gap: var(--gap);
+      align-items: normal;
+      position: relative;
+      padding: 16px 0;
+    }
+
+    .row.thirds {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+    .row.thirds .col {
+    min-width: 0;
+    flex: 1; /* default fallback for equal thirds */
+    }
+
+    /* Explicit width overrides */
+    .row.thirds .col-2-3 {
+    flex: 0 0 66.66%;
+    max-width: 66.66%;
+    /* padding: 8px; */
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+    }
+
+    .row.thirds .col-1-3 {
+    flex: 0 0 33.33%;
+    max-width: 33.33%;
+    /* padding: 8px; */
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+    }
+    /* Halves (1/2 + 1/2) */
+    .halves { grid-template-columns: 1fr 1fr; }
+
+    .col {
+      /* padding: 8px; */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .text-block {
+      flex: 1 1 45%;
+      padding: 18px;
+      border-radius: 8px;
+      background: #fafafa;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      min-height: 100px;
+
+    }
+
+    .vis {
+      width: 100%;
+      height: min(60vh, 800px);
+      border-radius: 6px;
+      background: linear-gradient(180deg,#fff,#fbfbfb);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    @media (max-width: 800px) {
+      .thirds, .halves { grid-template-columns: 1fr; }
+    }
+
+    .vega-embed {
+    width: 100% !important;
+  }
+
+  iframe, canvas {
+    max-width: 100% !important;
+  }
+  </style>
+</head>
+
+<body>
+  <h1>Public Transport in Australia — who really gets a seat?</h1>
+
+  <div class="container">
+
+    <!-- INTRO TEXT -->
+     
+    <div class="text-block" style="margin-bottom: 30px;">
+        
+    <h3>Victoria’s Public Transport in Context</h3>
+    <p>
+    <strong style="color:#1f78b4;">Public transport in Victoria</strong> has undergone <em>dramatic changes</em> over recent years. 
+    From <u style="color:#33a02c;">population growth</u> to <u style="color:#ff7f00;">pandemic disruptions</u>, this analysis <span style="color:#1f78b4;"><strong>visualises how Victorians travel</strong></span>, 
+    identifies <span style="color:#ff7f00;"><strong>where congestion occurs</strong></span>, 
+    and highlights <em style="color:#e31a1c;">what times of day and year are most affected</em>.
+</p>
+<p>
+    By exploring these patterns, the visualisations guide the reader through both <strong style="color:#33a02c;">everyday commuting trends</strong> 
+    and <strong style="color:#1f78b4;">seasonal shifts</strong> in ridership, providing a <em style="color:#6a3d9a;">clear understanding</em> of Victoria’s evolving public transport landscape.
+</p>
+    <!-- SECTION 1: Text (1/3) + Isotype (2/3) -->
+    
+    <div class="row thirds">
+      <div class="col col-1-3">
+        <div class="text-block">
+         <h3>The Current Situation</h3>
+        <p>
+    Across Victoria, <strong style="color:#1f78b4;">millions depend on trains, trams, and buses daily</strong>. The <em style="color:#33a02c;">isotype chart</em> illustrates the <span style="color:#1f78b4;"><strong>distribution of travellers per mode</strong></span>, highlighting the <strong style="color:#e31a1c;">dominance of metropolitan rail networks</strong>.
+</p>
+<p>
+    According to the chart, Victorians take up to <span style="color:#ff7f00;"><strong>16 million train trips per month</strong></span>. While this may seem substantial, consider that Victoria’s population was <strong style="color:#6a3d9a;">6.959 million</strong> in the recent census. This reveals that the <em style="color:#e31a1c;">average Victorian takes just over 2 train rides per month</em>.
+</p>
+<p>
+    The chart also highlights the <strong style="color:#ff7f00;">regional–metropolitan discrepancy</strong>: limited public transport accessibility in rural Victoria makes <span style="color:#e31a1c;"><strong>cars the preferred mode of transport</strong></span>, while urban areas rely heavily on <span style="color:#1f78b4;"><strong>trains and trams</strong></span>.
+</p>
+
+        </div>
+      </div>
+      <div class="col col-2-3">
+        <div id="vis4" class="vis"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Vis2 (2/3) + Text (1/3) -->
+    <div class="row thirds">
+  <!-- Visualization first (2/3 width) -->
+  <div class="col col-2-3">
+    <div id="vis2" class="vis"></div>
+  </div>
+
+  <!-- Text second (1/3 width) -->
+  <div class="col col-1-3">
+    <div class="text-block">
+    <h3>Where Congestion Happens</h3>
+    <p>
+    The <strong style="color:#ff7f00;">proportional bubble map</strong> illustrates which stations experience the <span style="color:#ff7f00;"><strong>heaviest congestion</strong></span>. 
+    <em style="color:#33a02c;">Larger bubbles</em> indicate higher annual passenger entries, while <u style="color:#6a3d9a;">colour differentiates between weekday and weekend dominance</u>.
+</p>
+<p>
+    Key trends emerge from the bubble chart: station entries are heavily skewed towards those <strong style="color:#1f78b4;">closer to the Melbourne CBD</strong>, highlighting that <em style="color:#33a02c;">public transport is less frequently used in the outer suburbs</em>. 
+    <span style="color:#1f78b4;"><strong>Large stations</strong></span> such as <strong style="color:#1f78b4;">Caulfield</strong> and <strong style="color:#1f78b4;">Richmond</strong> see significantly higher commuter numbers on weekends, likely due to their proximity to the <em style="color:#e31a1c;">Caulfield Racecourse</em> and the <em style="color:#e31a1c;">MCG</em> respectively.
+</p>
+<p>
+    With train usage higher across the <strong style="color:#33a02c;">eastern suburbs</strong> than the west, it remains to be seen whether the proposed <span style="color:#1f78b4;"><strong>Suburban Rail Loop</strong></span> will help <em style="color:#ff7f00;">reduce congestion</em> and <em style="color:#1f78b4;">shorten travel times</em> for commuters across Melbourne.
+</p>
+
+    </div>
+  </div>
+</div>
+
+   
+     <!-- SECTION 3: Vis2 (2/3) + Text (1/3) -->
+<div class="row thirds">
+  <!-- Visualization first (2/3 width) -->
+  <div class="col col-2-3">
+    <div id="vis3" class="vis"></div>
+  </div>
+
+  <!-- Text second (1/3 width) -->
+  <div class="col col-1-3">
+    <div class="text-block">
+      <h3>Daily View: Where and When Congestion Happens</h3>
+<p>
+  As shown in the <em style="color:#33a02c;">heatmap</em>, the busiest period for train passengers is the 
+  <span style="color:#ff7f00;"><strong>evening peak (4–7pm)</strong></span>, when commuters travel home from work. 
+  In contrast, <strong style="color:#1f78b4;">morning hours (before 9am)</strong> are noticeably quieter across most stations, reflecting the 
+  growing trend of <em style="color:#e31a1c;">staggered work hours</em> and <em style="color:#33a02c;">hybrid commuting patterns</em> since the pandemic. 
+  <br><br>Congestion is most pronounced in the <strong style="color:#1f78b4;">CBD</strong>, while suburban stations such as 
+  <strong style="color:#1f78b4;">Footscray</strong> and <strong style="color:#1f78b4;">Caulfield</strong> experience a <em style="color:#ff7f00;">more even spread of commuters throughout the day</em>.
+</p>
+
+    </div>
+  </div>
+</div>
+     
+
+    <!-- SECTION 4: Vis5 (2/3) + Text (1/3) -->
+    <div class="row thirds">
+      
+      <div class="col col-1-3">
+        <div class="text-block">
+          <h3>Where Do People Go During Holidays?</h3>
+  <p>
+    <strong style="color:#1f78b4;">School holidays</strong> bring noticeable shifts in station traffic. Stations linked to schools, like <strong style="color:#33a02c;">Huntingdale</strong> and <strong style="color:#33a02c;">Riversdale</strong>, experience large drops in daily passengers—Huntingdale alone loses over <span style="color:#ff7f00;"><strong>2,000 riders per day</strong></span>. 
+    Even <strong style="color:#1f78b4;">Flemington Racecourse</strong> sees an <span style="color:#ff7f00;"><strong>80% drop-off</strong></span> while school kids are on break.
+</p>
+<p>
+    Conversely, stations near <span style="color:#1f78b4;"><strong>leisure destinations</strong></span> benefit from the holidays. <strong style="color:#33a02c;">Southland</strong> and the <strong style="color:#33a02c;">Showgrounds</strong> see noticeable increases in traffic as families head out for shopping and events.
+</p>
+<p>
+    Overall, the <em style="color:#ff7f00;">barbell chart</em> highlights these contrasting impacts: <strong style="color:#1f78b4;">commuter-heavy, school-adjacent stations fall</strong>, while <strong style="color:#33a02c;">fun and recreational destinations rise</strong>.
+</p>
+
+        </div>
+      </div>
+      <div class="col col-2-3">
+        <div id="vis5" class="vis"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: Vis1 (2/3) + Text (1/3) -->
+    <div class="row thirds">
+      <div class="col col-2-3">
+        <div id="vis1" class="vis"></div>
+      </div>
+      <div class="col col-1-3">
+        <div class="text-block">
+          <h3>Overall Challenges and Trends</h3>
+    <p>
+    To view how different transport modes have changed over time over the last 7 years, see the <strong style="color:#ff7f00;">line graph</strong>. Click specific transport modes on the legend to view them in isolation. 
+</p>
+<p>
+    The <strong style="color:#1f78b4;">COVID-19 pandemic</strong> sharply reduced passenger numbers across all transport modes. 
+    Although recovery is underway, the data highlights <em style="color:#33a02c;">sustained changes in commuting patterns</em>, particularly in <strong style="color:#ff7f00;">off-peak</strong> and <strong style="color:#6a3d9a;">regional services</strong>. 
+    Even so, passenger numbers from <strong style="color:#1f78b4;">2018</strong> remain higher than those in <strong style="color:#1f78b4;">2025</strong>, indicating long-term shifts in travel behaviour.
+</p>
+<p>
+    Increasing public transport usage is <span style="color:#1f78b4;"><strong>critical for Australia</strong></span> to reduce <em style="color:#ff7f00;">traffic congestion</em>, <em style="color:#33a02c;">greenhouse gas emissions</em>, and urban sprawl. 
+    Encouraging commuters to rely on trains, trams, and buses instead of cars will improve <strong style="color:#1f78b4;">city liveability</strong> and <strong style="color:#33a02c;">sustainable mobility</strong> for future generations.
+</p>
+
+ 
+</div>
+      </div>
+    </div>
+
+  </div>
+
+  </div>
+    
+
+  <script>
+    const specVis1 = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "width": "container",
+  "height": "container",
+  "title": {
+    "text": "Public Transport Trends and the Effect of COVID: Filter by Mode",
+    "font": "Segoe UI",
+    "fontSize": 18,
+    "fontWeight": "bold"
+  },
+
+  "data": {
+    "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/W10/DV2/transport_long.csv",
+    "format": {"parse": {"Date": "date:%d/%m/%Y"}}
+  },
+
+  "transform": [
+    {"calculate": "year(datum.Date)", "as": "Year"},
+    {"calculate": "timeFormat(datum.Date, '%B')", "as": "Month name"}
+  ],
+
+  "layer": [
+    {
+      "params": [
+        {
+          "name": "mode_selection",
+          "select": {"type": "point", "fields": ["Mode"]},
+          "bind": "legend"
+        }
+      ],
+      "mark": {"type": "line", "point": false, "strokeWidth": 2},
+      "encoding": {
+        "x": {
+          "field": "Date",
+          "type": "temporal",
+          "title": "Month",
+          "timeUnit": "yearmonth",
+          "axis": {"grid": false}
+        },
+        "y": {
+          "field": "Value",
+          "type": "quantitative",
+          "title": "Total Number of Trips",
+          "axis": {"format": "~s", "grid": false}
+        },
+        "color": {
+          "field": "Mode",
+          "type": "nominal",
+          "title": "Transport Mode",
+          "scale": {
+            "domain": [
+              "Metropolitan tram",
+              "Metropolitan bus",
+              "Metropolitan train",
+              "Regional train",
+              "Regional coach",
+              "Regional bus"
+            ],
+            "range": [
+            "#33a02c",  // tram (bright green)
+            "#ff7f00",  // metro bus (orange)
+            "#1f78b4",  // metro train (strong blue)
+            "#e31a1c",  // regional train (magenta-red)
+            "#a6761d",  // coach (brown)
+            "#6a3d9a"   // regional bus (grey-purple)
+            ]
+          }
+        },
+        "opacity": {
+          "condition": {"param": "mode_selection", "value": 1},
+          "value": 0.2
+        },
+        "tooltip": [
+          {"field": "Month name", "type": "nominal", "title": "Month"},
+          {"field": "Year", "type": "ordinal"},
+          {"field": "Mode", "type": "nominal"},
+          {"field": "Value", "type": "quantitative", "format": ",", "title": "Total Trips"}
+        ]
+      }
+    },
+
+    {
+      "data": {
+        "values": [
+          {
+            "Date": "2020-03-01T00:00:00",
+            "y": 30000000,
+            "label": "March 2020 — the first COVID-19 lockdown"
+          }
+        ]
+      },
+      "layer": [
+        {
+          "mark": {"type": "rule", "color": "red", "strokeWidth": 2, "strokeDash": [4, 4]},
+          "encoding": {
+            "x": {"field": "Date", "type": "temporal", "timeUnit": "yearmonth"}
+          }
+        },
+        {
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "baseline": "bottom",
+            "dx": 5,
+            "dy": 15,
+            "color": "red",
+            "fontWeight": "bold",
+            "font": "Roboto"
+          },
+          "encoding": {
+            "x": {"field": "Date", "type": "temporal", "timeUnit": "yearmonth"},
+            "y": {"field": "y", "type": "quantitative"},
+            "text": {"field": "label", "type": "nominal"}
+          }
+
+        },
+{
+  "data": {
+    "values": [
+      {
+        "note": "2025 public transport usage remains below pre-pandemic levels"
+      }
+    ]
+  },
+  "mark": {
+    "type": "text",
+    "align": "right",
+    "baseline": "top",
+    "dx": -10,
+    "dy": 100,
+    "font": "Segoe UI",
+    "fontSize": 11,
+    "fontWeight": "500",
+    "color": "#333",
+    "background": "#ffffffcc",
+    "cornerRadius": 4,
+    "padding": 5
+  },
+  "encoding": {
+    "x": {"value": "width"},
+    "y": {"value": 0},
+    "text": {"field": "note"}
+  }
+}
+
+      ]
+    }
+  ]
+}
+;
+
+    const specVis2 = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "Train Passengers in Metropolitan Victoria - Commuter vs Leisure Stations",
+  "width": "container",
+  "height": "container",
+  "background": "#e6f3ff",
+
+  "params": [
+    {
+      "name": "zoom_level",
+      "value": 30000,
+      "bind": {
+        "input": "range",
+        "min": 20000,
+        "max": 90000,
+        "step": 500,
+        "name": "Zoom: "
+      }
+    }
+  ],
+
+  "projection": {
+    "type": "mercator",
+    "center": [144.9631, -37.8236],
+    "scale": {"expr": "zoom_level"}
+  },
+
+  "layer": [
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/W10/DV2/suburbs_simplified.json",
+        "format": {"type": "topojson", "feature": "vic_localities"}
+      },
+      "mark": {
+        "type": "geoshape",
+        "fill": "#f0f0f0",
+        "stroke": "#d9d9d9"
+      }
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/main/DV2/annual_metropolitan_train_station_entries_fy_2024_2025%20(1).csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"calculate": "toNumber(datum.Pax_weekday)", "as": "weekday_numeric"},
+        {"calculate": "toNumber(datum.Pax_Saturday)", "as": "saturday_numeric"},
+        {"calculate": "toNumber(datum.Pax_Sunday)", "as": "sunday_numeric"},
+        {
+          "calculate": "datum.weekday_numeric / (datum.saturday_numeric + datum.sunday_numeric)",
+          "as": "weekday_weekend_ratio"
+        },
+        {
+          "calculate": "datum.weekday_weekend_ratio > 2 ? 'Heavy Commuter' : datum.weekday_weekend_ratio > 1.2 ? 'Commuter' : 'Balanced'",
+          "as": "station_type"
+        }
+      ],
+      "mark": {"type": "circle", "opacity": 0.8, "stroke": "white", "strokeWidth": 0.5},
+      "encoding": {
+        "longitude": {"field": "Stop_long", "type": "quantitative"},
+        "latitude": {"field": "Stop_lat", "type": "quantitative"},
+        "size": {
+          "field": "Pax_annual",
+          "type": "quantitative",
+          "scale": {"range": [10, 500]},
+          "title": "Annual Passengers",
+          "legend": {"format": ",.0f"}
+        },
+        "color": {
+          "field": "weekday_weekend_ratio",
+          "type": "quantitative",
+          "scale": {
+            "domain": [0.8, 1.5, 3],
+            "range": ["#2ca02c", "#ffbb78", "#d62728"],
+            "type": "threshold"
+          },
+          "title": "Station Usage Pattern",
+          "legend": {
+            "orient": "right",
+            "direction": "vertical",
+            "titleLimit": 200,
+            "labelExpr": "datum.value == 0.8 ? 'Leisure (Weekends)' : datum.value == 1.5 ? 'Balanced' : 'Commuter (Weekdays)'"
+          }
+        },
+        "tooltip": [
+          {"field": "Stop_name", "type": "nominal", "title": "Station"},
+          {"field": "Pax_annual", "type": "quantitative", "title": "Annual Passengers", "format": ","},
+          {"field": "weekday_numeric", "type": "quantitative", "title": "Avg Weekday", "format": ","},
+          {"field": "saturday_numeric", "type": "quantitative", "title": "Avg Saturday", "format": ","},
+          {"field": "sunday_numeric", "type": "quantitative", "title": "Avg Sunday", "format": ","},
+          {"field": "weekday_weekend_ratio", "type": "quantitative", "title": "Weekday/Weekend Ratio", "format": ".2f"}
+        ]
+      }
+    },
+    {
+      "data": {
+        "values": [
+          {
+            "longitude": 145,
+            "latitude": -37.55,
+            "text": "The urban sprawl phenomenon results in lower public transport accessibility in the outer suburbs of Melbourne."
+          }
+        ]
+      },
+      "mark": {
+        "type": "text",
+        "fontSize": 11,
+        "color": "#333",
+        "align": "center",
+        "baseline": "top"
+      },
+      "encoding": {
+        "longitude": {"field": "longitude", "type": "quantitative"},
+        "latitude": {"field": "latitude", "type": "quantitative"},
+        "text": {"field": "text"}
+      }
+    }
+  ]
+} ;
+
+    const specVis3 = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "When Do Passengers Travel? Peak Hour Patterns by Station",
+  "width": "container",
+  "height": "container",
+  "data": {
+    "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/main/DV2/annual_metropolitan_train_station_entries_fy_2024_2025%20(1).csv",
+    "format": {"type": "csv"}
+  },
+
+  "transform": [
+    {
+      "calculate": "toNumber(datum.Pax_weekday)",
+      "as": "weekday_numeric"
+    },
+    {
+      "calculate": "toNumber(datum.Pax_annual)",
+      "as": "annual_numeric"
+    },
+    {
+      "window": [{"op": "rank", "as": "rank_desc"}],
+      "sort": [{"field": "annual_numeric", "order": "descending"}]
+    },
+    {
+      "filter": "datum.rank_desc <= 10"
+    },
+    {
+      "fold": [
+        "Pax_pre_AM_peak",
+        "Pax_AM_peak",
+        "Pax_interpeak",
+        "Pax_PM_peak",
+        "Pax_PM_late"
+      ],
+      "as": ["time_period", "passengers"]
+    },
+    {
+      "calculate": "toNumber(datum.passengers)",
+      "as": "passengers_numeric"
+    },
+    {
+      "calculate": "datum.passengers_numeric / datum.weekday_numeric",
+      "as": "proportion_of_weekday"
+    },
+    {
+      "calculate": "datum.time_period == 'Pax_pre_AM_peak' ? '1. Early Morning (before 7am)' : datum.time_period == 'Pax_AM_peak' ? '2. AM Peak (7-9am)' : datum.time_period == 'Pax_interpeak' ? '3. Mid-day (9am-4pm)' : datum.time_period == 'Pax_PM_peak' ? '4. PM Peak (4-7pm)' : '5. Evening (after 7pm)'",
+      "as": "time_period_label"
+    }
+  ],
+  "mark": {"type": "rect", "stroke": "white", "strokeWidth": 2},
+  "encoding": {
+    "x": {
+      "field": "time_period_label",
+      "type": "nominal",
+      "title": "Time Period",
+      "axis": {"labelAngle": 0, "labelLimit": 150}
+    },
+    "y": {
+      "field": "Stop_name",
+      "type": "nominal",
+      "title": "Station",
+      "sort": {"field": "annual_numeric", "order": "descending"}
+    },
+    "color": {
+      "field": "proportion_of_weekday",
+      "type": "quantitative",
+      "scale": {
+        "scheme": "blues",
+        "type": "linear",
+        "domain": [0, 0.8]
+      },
+      "title": "% of Daily Traffic",
+      "legend": {"format": ".0%"}
+    },
+    "tooltip": [
+      {"field": "Stop_name", "type": "nominal", "title": "Station"},
+      {"field": "time_period_label", "type": "nominal", "title": "Time Period"},
+      {"field": "passengers_numeric", "type": "quantitative", "title": "Passengers", "format": ","},
+      {"field": "proportion_of_weekday", "type": "quantitative", "title": "% of Weekday Traffic", "format": ".1%"},
+      {"field": "weekday_numeric", "type": "quantitative", "title": "Total Weekday Passengers", "format": ","}
+    ]
+  }
+};
+    const specVis4 = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "config": {"view": {"stroke": ""}},
+  "title": {
+    "text": "How Victorians Travel",
+    "subtitle": "Each icon represents 1 million monthly trips (2024 average)",
+    "fontSize": 18,
+    "subtitleFontSize": 13
+  },
+  "width": "container",
+  "height": "container",
+  "data": {
+    "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/main/DV2/monthly_public_transport_patronage_by_mode%20(2).csv",
+    "format": {"type": "csv"}
+  },
+  "transform": [
+    {"filter": "datum.Year == 2024"},
+    {
+      "aggregate": [
+        {"op": "mean", "field": "Metropolitan train", "as": "Metro Train"},
+        {"op": "mean", "field": "Metropolitan tram", "as": "Metro Tram"},
+        {"op": "mean", "field": "Metropolitan bus", "as": "Metro Bus"},
+        {"op": "mean", "field": "Regional train", "as": "Regional Train"},
+        {"op": "mean", "field": "Regional bus", "as": "Regional Bus"}
+      ]
+    },
+    {
+      "fold": ["Metro Train", "Metro Tram", "Metro Bus", "Regional Train", "Regional Bus"],
+      "as": ["mode", "passengers"]
+    },
+    {"calculate": "round(toNumber(datum.passengers) / 1000000)", "as": "num_icons"},
+    {"calculate": "sequence(1, datum.num_icons + 1)", "as": "icon_array"},
+    {"flatten": ["icon_array"]},
+    {"window": [{"op": "rank", "as": "col"}], "groupby": ["mode"]}
+  ],
+  "layer": [
+    {
+      "mark": {"type": "point", "filled": true},
+      "encoding": {
+        "x": {"field": "col", "type": "ordinal", "axis": null},
+        "y": {
+          "field": "mode",
+          "type": "nominal",
+          "axis": {"title": null, "labelFontSize": 13, "labelPadding": 10},
+          "sort": ["Metro Train", "Metro Tram", "Metro Bus", "Regional Train", "Regional Bus"]
+        },
+        "shape": {
+          "field": "mode",
+          "type": "nominal",
+          "scale": {
+            "domain": ["Metro Train", "Metro Tram", "Metro Bus", "Regional Train", "Regional Bus"],
+            "range": [
+              "M 1.4827 0.401 V -0.4162 c 0 -0.1872 -0.1517 -0.3389 -0.3389 -0.3389 h -0.1573 l 0.0188 -0.1669 h 0.0344 c 0.0368 0 0.0682 0.0224 0.0817 0.0542 l 0.0626 -0.0264 V -0.8943 C 1.1602 -0.9505 1.1045 -0.9899 1.0395 -0.99 L 0.5562 -0.99 c -0.0649 0 -0.1206 0.0394 -0.1443 0.0957 l 0.0626 0.0265 c 0.0135 -0.0318 0.045 -0.0542 0.0817 -0.0542 h 0.0344 l 0.0187 0.1669 h -0.1573 c -0.1871 0 -0.3389 0.1517 -0.3389 0.3389 v 0.8172 c 0 0.1419 0.1032 0.2601 0.2386 0.2837 L 0.1392 1.0058 h 0.189 l 0.0872 -0.1318 h 0.7651 L 1.2677 1.0058 h 0.1889 l -0.2125 -0.3211 C 1.3795 0.6612 1.4827 0.5429 1.4827 0.401 z M 0.9368 -0.922 l -0.0187 0.1669 h -0.2403 l -0.0188 -0.1669 L 0.9368 -0.922 z M 0.5044 -0.6029 h 0.5869 v 0.0978 h -0.5869 V -0.6029 z M 0.3279 -0.2867 c 0 -0.0426 0.0345 -0.0771 0.077 -0.0771 h 0.7861 c 0.0426 0 0.0771 0.0345 0.0771 0.0771 v 0.2571 c 0 0.0426 -0.0345 0.077 -0.0771 0.077 H 0.4049 c -0.0426 0 -0.077 -0.0345 -0.077 -0.077 V -0.2867 z M 0.4012 0.4854 c -0.0497 0 -0.0899 -0.0402 -0.0899 -0.0898 c 0 -0.0497 0.0402 -0.0899 0.0899 -0.0899 c 0.0496 0 0.0898 0.0402 0.0898 0.0899 C 0.491 0.4452 0.4508 0.4854 0.4012 0.4854 z M 0.4721 0.7883 l 0.0657 -0.0993 h 0.5203 l 0.0657 0.0993 H 0.4721 z M 1.1946 0.4854 c -0.0496 0 -0.0898 -0.0402 -0.0898 -0.0898 c 0 -0.0497 0.0402 -0.0899 0.0898 -0.0899 c 0.0497 0 0.0899 0.0402 0.0899 0.0899 C 1.2845 0.4452 1.2443 0.4854 1.1946 0.4854 z",
+              "M 1.3 -0.8 H 0.3 C 0.1344 -0.8 0 -0.6657 0 -0.5 V 0.5 C 0 0.5553 0.0447 0.6 0.1 0.6 H 0.2 V 0.7 C 0.2 0.7553 0.2447 0.8 0.3 0.8 H 0.4 C 0.4553 0.8 0.5 0.7553 0.5 0.7 V 0.6 H 1.1 V 0.7 C 1.1 0.7553 1.1447 0.8 1.2 0.8 H 1.3 C 1.3553 0.8 1.4 0.7553 1.4 0.7 V 0.6 H 1.5 C 1.5553 0.6 1.6 0.5553 1.6 0.5 V -0.5 C 1.6 -0.6656 1.4657 -0.8 1.3 -0.8 Z M 0.4 0.3 C 0.3447 0.3 0.3 0.2553 0.3 0.2 S 0.3447 0.1 0.4 0.1 S 0.5 0.1447 0.5 0.2 S 0.4553 0.3 0.4 0.3 Z M 1.2 0.3 C 1.1447 0.3 1.1 0.2553 1.1 0.2 S 1.1447 0.1 1.2 0.1 S 1.3 0.1447 1.3 0.2 S 1.2553 0.3 1.2 0.3 Z M 1.4 -0.2 H 0.2 V -0.5 C 0.2 -0.5553 0.2447 -0.6 0.3 -0.6 H 1.3 C 1.3553 -0.6 1.4 -0.5553 1.4 -0.5 V -0.2 Z"
+            ]
+          },
+          "legend": null
+        },
+        "color": {
+          "field": "mode",
+          "type": "nominal",
+          "scale": {
+            "domain": ["Metro Train", "Metro Tram", "Metro Bus", "Regional Train", "Regional Bus"],
+            "range": ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#8c564b"]
+          },
+          "legend": null
+        },
+        "size": {"value": 1200},
+        "opacity": {"value": 1}
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "fontSize": 12,
+        "font": "Inter",
+        "color": "#555",
+        "x": "width",
+        "y": "height",
+        "dx": -10,
+        "dy": -50
+      },
+      "encoding": {
+        "text": {"value": "While Melbourne is famous for its tram network, buses are more prevalent in Victoria."}
+      }
+    }
+  ]
+}
+;
+const specVis5 = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "How Do School Holidays Affect Station Traffic?",
+  "width": "container",
+  "height": "container",
+  "data": {
+    "url": "https://raw.githubusercontent.com/daniel-cameron/FIT3179/refs/heads/main/DV2/annual_metropolitan_train_station_entries_fy_2024_2025%20(1).csv",
+    "format": {"type": "csv"}
+  },
+  "params": [
+    {
+      "name": "impact_filter",
+      "value": "Most Affected",
+      "bind": {
+        "input": "select",
+        "options": ["Most Affected", "Least Affected"],
+        "labels": ["10 Most Affected Stations", "10 Least Affected Stations"],
+        "name": "Show: "
+      }
+    }
+  ],
+  "transform": [
+    {"calculate": "toNumber(datum.Pax_norm_weekday)", "as": "normal_weekday"},
+    {"calculate": "toNumber(datum.Pax_sch_hol_weekday)", "as": "school_holiday"},
+    {
+      "calculate": "(datum.normal_weekday - datum.school_holiday) / datum.normal_weekday",
+      "as": "pct_dropoff"
+    },
+    {"filter": "datum.normal_weekday > 0 && datum.school_holiday > 0"},
+    {
+      "window": [{"op": "rank", "as": "rank_dropoff"}],
+      "sort": [{"field": "pct_dropoff", "order": "descending"}]
+    },
+    {
+      "window": [{"op": "rank", "as": "rank_stable"}],
+      "sort": [{"field": "pct_dropoff", "order": "ascending"}]
+    },
+    {
+      "calculate": "datum.rank_dropoff <= 10 ? 'Most Affected' : datum.rank_stable <= 10 ? 'Least Affected' : null",
+      "as": "impact_group"
+    },
+    {"filter": "datum.impact_group == impact_filter"},
+    {
+      "fold": ["normal_weekday", "school_holiday"],
+      "as": ["day_type", "passengers"]
+    },
+    {
+      "calculate": "datum.day_type == 'normal_weekday' ? 'Normal Weekday' : 'School Holiday'",
+      "as": "Day_Type"
+    }
+  ],
+  "encoding": {
+    "y": {
+      "field": "Stop_name",
+      "type": "nominal",
+      "title": "Station",
+      "sort": {"field": "pct_dropoff", "order": "descending"},
+      "axis": {"labelLimit": 200}
+    }
+  },
+  "layer": [
+    {
+      "mark": {"type": "rule", "color": "#888", "size": 2},
+      "encoding": {
+        "x": {"aggregate": "min", "field": "passengers"},
+        "x2": {"aggregate": "max", "field": "passengers"},
+        "tooltip": [
+          {"field": "Stop_name", "type": "nominal", "title": "Station"},
+          {"field": "normal_weekday", "type": "quantitative", "title": "Normal Weekday", "format": ","},
+          {"field": "school_holiday", "type": "quantitative", "title": "School Holiday Weekday", "format": ","},
+          {"field": "pct_dropoff", "type": "quantitative", "title": "% Dropoff", "format": ".1%"}
+        ]
+      }
+    },
+    {
+      "mark": {"type": "circle", "size": 100},
+      "encoding": {
+        "x": {"field": "passengers", "type": "quantitative", "title": "Average Daily Passengers"},
+        "color": {
+          "field": "Day_Type",
+          "type": "nominal",
+          "scale": {
+            "domain": ["Normal Weekday", "School Holiday"],
+            "range": ["#1f77b4", "#ff7f0e"]
+          },
+          "legend": {"title": "Day Type", "orient": "bottom-right"}
+        },
+        "tooltip": [
+          {"field": "Stop_name", "type": "nominal", "title": "Station"},
+          {"field": "Day_Type", "type": "nominal"},
+          {"field": "passengers", "type": "quantitative", "title": "Passengers", "format": ","},
+          {"field": "pct_dropoff", "type": "quantitative", "title": "% Dropoff", "format": ".1%"}
+        ]
+      }
+    },
+    {
+      "transform": [
+        {"filter": "impact_filter == 'Most Affected'"},
+        {"filter": "datum.Stop_name == 'Huntingdale'"}
+      ],
+      "mark": {"type": "rule", "color": "#777", "strokeDash": [2, 2]},
+      "encoding": {
+        "x": {"aggregate": "max", "field": "passengers"},
+        "x2": {"aggregate": "max", "field": "passengers", "offset": 8},
+        "y": {"field": "Stop_name"},
+        "y2": {"field": "Stop_name"}
+      }
+    },
+    {
+      "transform": [
+        {"filter": "impact_filter == 'Most Affected'"},
+        {"filter": "datum.Stop_name == 'Huntingdale'"}
+      ],
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "middle",
+        "dx": -280,
+        "dy": -20,
+        "font": "Segoe UI",
+        "fontSize": 12,
+        
+        "color": "#444"
+      },
+      "encoding": {
+        "x": {"aggregate": "max", "field": "passengers"},
+        "y": {"field": "Stop_name"},
+        "text": {"value": "Large dropoff during Monash University semester breaks"}
+      }
+    }
+  ]
+}
+;
+
+    async function tryEmbed(containerId, spec){
+      if(!spec) return;
+      try{
+        await vegaEmbed('#'+containerId, spec, {
+          actions:false,
+          renderer:'canvas',
+          config:{ autosize:{ type: "fit", contains:"padding" } }
+        });
+      }catch(err){
+        console.error('Error embedding', containerId, err);
+        const el = document.getElementById(containerId);
+        if(el) el.innerHTML = '<div style="padding:12px; color:#900">Failed to render. Check console for errors.</div>';
+      }
+    }
+
+    tryEmbed('vis1', specVis1);
+    tryEmbed('vis2', specVis2);
+    tryEmbed('vis3', specVis3);
+    tryEmbed('vis4', specVis4);
+    tryEmbed('vis5', specVis5);
+    
+
+    window.VEGA_TEMPLATE = { embed: vegaEmbed, tryEmbed };
+  </script>
+</body>
+<footer class="typography-container" style="border-top:1px solid #ccc; padding-top:1rem; font-size:0.875rem; color:#555;">
+  <p>
+    <strong>Author:</strong> Daniel Cameron<br>
+    <strong>FIT3179</strong> <br>
+    <strong>Data Sources found here:</strong><br>
+    • <a href="https://discover.data.vic.gov.au/dataset/annual-metropolitan-train-station-patronage-station-entries" target="_blank" style="color:#1f77b4; text-decoration:underline;">Annual Metropolitan Train Station Patronage (Station Entries)</a><br>
+    • <a href="https://discover.data.vic.gov.au/dataset/monthly-public-transport-patronage-by-mode" target="_blank" style="color:#1f77b4; text-decoration:underline;">Monthly Public Transport Patronage by Mode</a> <br>
+    <strong> Original topojson file (reshaped using Mapshaper):</strong> 
+    <br>
+     • <a href="https://github.com/JiayueJoyHuang/FIT3179-Data-Visualisation/blob/main/vic_map.topojson" target="_blank" style="color:#1f77b4; text-decoration:underline;">Victorian Suburbs</a>
+
+    
+  </p>
+</footer>
+</html>
